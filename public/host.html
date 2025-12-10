@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create Office Hour Session</title>
+  <link rel="stylesheet" href="css/style.css" />
+
+  <style>
+    form {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+      margin-bottom: 32px;
+    }
+
+    form div {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    label {
+      font-size: 14px;
+      color: #000;
+      opacity: 0.85;
+      margin-bottom: 6px;
+      text-align: left;
+    }
+
+    input[type="text"],
+    input[type="file"] {
+      width: 100%;
+      padding: 14px 16px;
+      font-family: 'Open Sauce', sans-serif;
+      font-size: 15px;
+      border: 1.5px solid #000;
+      border-radius: 8px;
+      outline: none;
+      transition: 0.2s ease;
+      background-color: #fff;
+    }
+
+    input[type="text"]:focus {
+      box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+    }
+
+    input[type="file"] {
+      padding: 10px 16px;
+      cursor: pointer;
+    }
+
+    .btn-submit {
+      width: 100%;
+      max-width: 400px;
+      padding: 15px 30px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      background-color: #000;
+      color: #fff;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn-submit:hover {
+      background-color: #333;
+    }
+
+    .footer-note {
+      font-size: 12px;
+      color: #000;
+      opacity: 0.9;
+      margin-top: -10px;
+      max-width: 450px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">
+  <a href="index.html">
+    <span>office hour</span>
+  </a>
+</div>
+
+
+    <div class="avatars">
+      <img src="images/avatar1.png" alt="Avatar" class="avatar avatar-1">
+      <img src="images/avatar2.png" alt="Avatar" class="avatar avatar-2">
+      <img src="images/avatar3.png" alt="Avatar" class="avatar avatar-3">
+      <img src="images/avatar4.png" alt="Avatar" class="avatar avatar-4">
+    </div>
+
+    <div class="content">
+      <h1>Create an office hour session</h1>
+      <p class="subtitle">
+        Set up your class office hour, upload FAQs, and share your code with students.
+      </p>
+
+      <form id="createForm" action="/api/create" method="POST" enctype="multipart/form-data">
+        <div>
+          <label for="profName">name</label>
+          <input id="profName" name="instructor" type="text" placeholder="Prof. Beck" required />
+        </div>
+
+        <div>
+          <label for="className">class name</label>
+          <input id="className" name="title" type="text" placeholder="ACS-3909-002" required />
+        </div>
+
+        <div>
+          <label for="faqFile">Common FAQs</label>
+          <input id="faqFile" name="faqs" type="file" accept=".txt,.csv" />
+        </div>
+
+        <button type="submit" class="btn-submit">Enter waiting room</button>
+      </form>
+
+      <p class="footer-note">
+        Common FAQs and answers will be displayed in the waiting room.
+      </p>
+    </div>
+  </div>
+
+<script>
+  const form = document.getElementById('createForm');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(form);
+
+    try {
+      const res = await fetch('/api/create', {
+        method: 'POST',
+        body: formData
+      });
+
+      // wait for server to come backl
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        alert(data.error || 'Unable to create session. Try again.');
+        return;
+      }
+     
+      window.location.href = `/host/${encodeURIComponent(data.code)}`;
+    } catch (err) {
+      alert('Network error. Please try again.');
+    }
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Queue • Office Hour</title>
+  <link rel="stylesheet" href="css/style.css"/>
+
+  <style>
+    .badge {
+      display:inline-block; background:#000; color:#fff; padding:10px 18px;
+      border-radius:10px; font-size:14px; line-height:1.2; min-width:260px;
+    }
+    .panel {
+      background:#000; color:#fff; border-radius:10px; padding:16px 18px;
+      display:inline-block; min-width:360px;
+    }
+    .eta-dots { letter-spacing:6px; margin-top:6px; font-size:12px; opacity:.9; }
+
+    .queue-wrap { max-width:780px; margin:22px auto 28px; }
+    .q-head { display:flex; justify-content:space-between; font-size:14px; margin:8px 8px 6px; opacity:.9; }
+    .q-list { display:flex; flex-direction:column; gap:10px; }
+    .q-row {
+      display:grid; grid-template-columns: 1fr 240px; align-items:center;
+      border-radius:10px; overflow:hidden;
+    }
+    .q-cell {
+      padding:12px 14px; display:flex; align-items:center; gap:10px;
+    }
+    .q-left { background:#f6d2f0; }     
+    .q-left.alt { background:#f7b1a5; }  
+    .q-left.me  { background:#b6c8ea; } 
+    .q-right { background:#fff; border:1.5px solid #000; justify-content:flex-end; }
+
+    .num { font-weight:bold; min-width:22px; text-align:right; }
+    .avatar-sm { width:22px; height:22px; border-radius:50%; object-fit:cover; }
+
+    .leave-wrap { text-align:center; margin-top:18px; }
+    .btn-wide { width:320px; }
+
+    .muted { font-size:12px; opacity:.9; margin-top:8px; }
+
+    @media (max-width:720px){
+      .q-row { grid-template-columns:1fr; }
+      .q-right { justify-content:flex-start; }
+      .badge, .panel { min-width:unset; width:92%; }
+      .btn-wide { width:92%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo"><a href="index.html"><span>office hour</span></a></div>
+
+  
+    <div class="avatars">
+      <img src="images/avatar1.png" class="avatar" alt="">
+      <img src="images/avatar2.png" class="avatar" alt="">
+      <img src="images/avatar3.png" class="avatar" alt="">
+      <img src="images/avatar4.png" class="avatar" alt="">
+    </div>
+
+    <div class="content">
+      <div id="roomBadge" class="badge">Office Hours : —<br/>Instructor: —</div> <br>
+
+      <!-- welcome board -->
+      <div id="welcomePanel" class="panel" style="margin-top:14px;">
+        Welcome!<br/>
+        <span id="positionLine">Your Position: —/—</span>
+        <div class="eta-dots">● ● ● ●</div>
+      </div>
+
+      <!-- queue -->
+      <div class="queue-wrap">
+        <div class="q-head">
+          <span>#students</span>
+          <span>#reasons</span>
+        </div>
+        <div id="queueList" class="q-list"></div>
+      </div>
+
+      <div class="panel" style="margin-top:14px;">
+  <div style="display:flex; gap:12px; align-items:center;">
+    <div style="flex:1;">
+      <div><strong>Preview</strong></div>
+      <video id="meVideo" autoplay muted playsinline style="width:100%; max-height:220px; border-radius:10px;"></video>
+    </div>
+    <div style="flex:1;">
+      <div><strong>Instructor</strong></div>
+      <video id="remoteVideo" autoplay playsinline style="width:100%; max-height:220px; border-radius:10px;"></video>
+    </div>
+  </div>
+</div>
+
+
+      <div class="leave-wrap">
+        <button id="btnLeave" class="btn btn-primary btn-wide">leave waiting room</button>
+        <div class="muted">Your place will be freed for the next student.</div>
+      </div>
+    </div>
+  </div>
+
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+
+//query string , URLSearch params helps us query strings
+  const qs   = new URLSearchParams(location.search); //location.search helps us get the string after "?"
+  const code = (qs.get('code') || localStorage.getItem('officehour:code') || '').toUpperCase(); //check stiorage
+  const myId = localStorage.getItem('officehour:entryId') || '';
+  const myName = localStorage.getItem('officehour:name') || '';
+
+
+  // node code or invalid code , you are sent backl tp the jopin page
+  if (!code || !myId) {
+    location.href = '/join?code=' + encodeURIComponent(code || '');
+  }
+
+
+  const socket = io();
+  socket.on('connect', () => {
+    socket.emit('joinRoom', { code });
+    socket.emit('webrtc:register', { code, entryId: myId, role: 'student' }); // ignore for nikw
+    // here.. devbugg
+    console.log('[student]    connected + registered', { code, myId });
+  });
+
+//helper function so ui dont have to keep rewriting 
+// takes an HTML id and a text , so you set the text content of that id to the passed text
+  function setText(id, text){ 
+    const el = document.getElementById(id); 
+    if (el){
+      el.textContent = text;
+    }  
+  }
+
+
+
+  function render(room){
+    document.getElementById('roomBadge').innerHTML =
+      `${room.title || 'Office Hours'} : ${room.code}<br/>Instructor: ${room.instructor || '—'}`;
+
+    const idx = room.queue.findIndex(s => s.id === myId);
+    const pos = idx >= 0 ? idx + 1 : '—';
+    const total = room.queue.length;
+
+
+    setText('positionLine', `Your Position: ${pos}/${total}`);
+
+    const list = document.getElementById('queueList');
+    // oh need to wipe for all updates
+    list.innerHTML = '';
+    room.queue.forEach((s, i) => {
+      const row = document.createElement('div');
+      row.className = 'q-row';
+
+    const left = document.createElement('div');
+const isMe = s.id === myId;
+const displayName = isMe ? `You (${myName})` : s.name;
+const inSession = s.startedAt ? ' - In session' : '';
+
+left.className = `q-cell q-left ${isMe ? 'me' : (i % 2 ? 'alt' : '')}`;
+left.innerHTML = `
+  <span class="num">${i + 1}.</span>
+  <img class="avatar-sm" src="images/avatar${(i % 4) + 1}.png" alt="">
+  <span>${displayName}${inSession}</span>
+`;
+
+      const right = document.createElement('div');
+      right.className = 'q-cell q-right';
+      right.textContent = s.reason || '—';
+
+      row.appendChild(left);
+      row.appendChild(right);
+      list.appendChild(row);
+    });
+  }
+
+  socket.on('queue:update', render);
+
+  // ---- WebRTC: callee (student) ----
+  //ANOTHER VIDEO CALL CODE THAT DOESN"T WOPRK PROPERLY YET < PLEASE IGNRE
+  const vMe = document.getElementById('meVideo');
+  const vRemote = document.getElementById('remoteVideo');
+  let pc, localStream;
+
+  const pcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+
+  async function ensureLocal(){
+    if (!localStream) {
+      localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      vMe.srcObject = localStream; // preview
+    }
+  }
+
+  socket.on('webrtc:offer', async ({ offer }) => {
+    console.log('[student] got offer');
+    await ensureLocal();
+
+    pc = new RTCPeerConnection(pcConfig);
+    localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+
+    pc.ontrack = (e) => { vRemote.srcObject = e.streams[0]; };
+    pc.onicecandidate = (e) => {
+      if (e.candidate) {
+        socket.emit('webrtc:ice', { code, toEntryId: 'HOST', candidate: e.candidate });
+      }
+    };
+
+    await pc.setRemoteDescription(new RTCSessionDescription(offer));
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+    socket.emit('webrtc:answer', { code, toEntryId: 'HOST', answer });
+  });
+
+  socket.on('webrtc:ice', async ({ candidate }) => {
+    if (pc && candidate) {
+      try { await pc.addIceCandidate(candidate); } catch (e) { console.warn('addIceCandidate failed', e); }
+    }
+  });
+
+ 
+  socket.on('webrtc:yourTurn', () => {
+    console.log('It’s your turn!');
+  });
+
+
+  
+  document.getElementById('btnLeave').addEventListener('click', async () => {
+    try {
+      await fetch('/api/leave', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, id: myId })
+      });
+    } finally {
+      if (pc) { pc.close(); pc = null; }
+      if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+      localStorage.removeItem('officehour:entryId');
+      window.location.href = '/index.html';
+    }
+  });
+
+  //part of the video call code that doesn't work yet , Maybe before final;s ill fix this
+  document.body.addEventListener('click', () => { vRemote.muted = false; }, { once: true });
+</script>
+
+
+
+</body>
+</html>

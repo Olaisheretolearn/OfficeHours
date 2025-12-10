@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Join Office Hour</title>
+  <link rel="stylesheet" href="css/style.css" />
+
+  <style>
+ /* ---- JOIN PAGE FORM REFINEMENTS ---- */
+form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 32px;
+}
+
+form div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  max-width: 400px;
+}
+
+label {
+  font-size: 14px;
+  color: #000;
+  opacity: 0.85;
+  margin-bottom: 6px;
+  text-align: left;
+}
+
+input {
+  width: 100%;
+  padding: 14px 16px;
+  font-family: 'Open Sauce', sans-serif;
+  font-size: 15px;
+  border: 1.5px solid #000;
+  border-radius: 8px;
+  outline: none;
+  transition: 0.2s ease;
+}
+
+input:focus {
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+}
+
+.btn-submit {
+  width: 100%;
+  max-width: 400px;
+  padding: 15px 30px;
+  font-size: 16px;
+  border: none;
+  border-radius: 8px;
+  background-color: #000;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.btn-submit:hover {
+  background-color: #333;
+}
+
+
+    @media (max-width: 768px) {
+      input { max-width: 320px; }
+      label { margin-left: calc(50% - 160px); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+     <div class="logo">
+  <a href="index.html">
+    <span>office hour</span>
+  </a>
+</div>
+
+    <div class="avatars">
+      <img src="images/avatar1.png" alt="Avatar" class="avatar avatar-1">
+      <img src="images/avatar2.png" alt="Avatar" class="avatar avatar-2">
+      <img src="images/avatar3.png" alt="Avatar" class="avatar avatar-3">
+      <img src="images/avatar4.png" alt="Avatar" class="avatar avatar-4">
+    </div>
+
+    <div class="content">
+      <h1>You’re almost in the waiting room</h1>
+      <p class="subtitle">
+        Enter your session details to join the queue and wait for your turn.
+      </p>
+
+      <form id="joinForm" action="/api/join" method="POST">
+        <div>
+          <label for="code">office code</label>
+          <input id="code" name="code" type="text" placeholder="e.g. RXTVBN" required />
+        </div>
+
+        <div>
+          <label for="name">nickname</label>
+          <input id="name" name="name" type="text" placeholder="Your name" required />
+        </div>
+
+        <div>
+          <label for="reason">Reason (Optional)</label>
+          <input id="reason" name="reason" type="text" placeholder="What do you need help with?" />
+        </div>
+
+        <button type="submit" class="btn-submit">Enter waiting room</button>
+      </form>
+
+      <p class="footer-text">
+        Don’t have a code? Contact your professor or TA for the code of this session.
+      </p>
+    </div>
+  </div>
+
+ <script>
+  const form = document.getElementById('joinForm');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const code  = form.code.value.trim().toUpperCase();
+    const name  = form.name.value.trim();
+    const reason= form.reason.value.trim();
+
+    try {
+      const res = await fetch('/api/join', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, name, reason })
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.ok) {
+        alert(data.error || 'Unable to join. Please check your details.');
+        return;
+      }
+
+      // persist for queue page
+      localStorage.setItem('officehour:code', code);
+      localStorage.setItem('officehour:entryId', data.id);
+      localStorage.setItem('officehour:name', name);
+
+      // go to queue page
+      window.location.href = `/queue.html?code=${encodeURIComponent(code)}`;
+    } catch (err) {
+      alert('Network error. Try again.');
+    }
+  });
+
+  // (optional) prefill code if query provides it
+  const qs = new URLSearchParams(location.search);
+  if (qs.get('code')) document.getElementById('code').value = qs.get('code').toUpperCase();
+</script>
+
+</body>
+</html>

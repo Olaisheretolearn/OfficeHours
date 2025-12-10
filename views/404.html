@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>404 • Not Found</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <style>
+    :root { --ink:#000; --paper:#fff; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--paper); color: var(--ink);
+      font-family: "Open Sauce", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      min-height: 100svh; display: grid; grid-template-rows: auto 1fr auto;
+    }
+
+   
+    .logo {
+      padding: 20px 24px;
+    }
+    .logo a { text-decoration: none; color: var(--ink); }
+    .logo span { font-weight: 700; font-size: 18px; }
+
+   
+    .center-wrap {
+      display: grid; place-items: center; padding: 24px;
+      text-align: center;
+    }
+    .art {
+      max-width: min(720px, 90vw);
+      width: 100%;
+      border-radius: 12px;
+     
+    }
+
+    /* bottom message */
+    .bottom-message {
+      position: sticky; bottom: 0; /* stays at bottom but scroll-safe */
+      text-align: center; padding: 18px 16px 28px;
+    }
+    .bottom-message p {
+      margin: 0 auto 12px; max-width: 640px; line-height: 1.35;
+      font-size: 14.5px;
+    }
+    .btn {
+      display: inline-block; background: var(--ink); color: var(--paper);
+      padding: 12px 18px; border-radius: 10px; text-decoration: none; font-size: 14px;
+      border: 1.5px solid var(--ink);
+    }
+    .btn:hover { filter: brightness(.92); }
+    .link {
+      color: var(--ink); text-underline-offset: 3px; text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+
+  <div class="logo">
+    <a href="/index.html">
+      <span>office hour</span>
+    </a>
+  </div>
+
+
+  <main class="center-wrap">
+    <h1>404 error</h1>
+     <p  class="bottom-message">
+      uh oh, this is awkward. we tried really hard but couldn’t find the page you’re looking for. <br>
+      you may find what you’re looking for on our <a class="link" href="/index.html">homepage</a>.
+    </p>
+    <a class="btn" href="/index.html" ">Go to homepage</a>
+   
+    <img class="art" src= "images/404.gif" alt="404 – Not Found"/>
+  </main>
+
+ 
+
+</body>
+</html>
